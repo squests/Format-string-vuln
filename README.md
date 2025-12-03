@@ -64,11 +64,20 @@ Which prints the 6th "ghost" parameter which is off the stack.
 gggggggg0x676767676767676767
 This is because since gggggggg is at the beginning of the buffer and also is 8 bytes long, %6$p will try to look at the 6th parameter, which is past all of the rsi, rdi, rdx, rcx, r8, r9 registers, so it starts from the stack, which is the start of your buffer, and then print the g's as hexadecimal interpreted as an 8 byte address.
 
-## Usage
+## Usage in defeating PIE
 Using this knowledge, we are now able to leak the ret to main from vuln. Looking at the stack, the start of the buffer is pointed to by %6$p, in order to print ret to main from vuln, we have to keep going past 8 byte parameters to print out the ret to main. This is calculated by %[6 + (312 bytes buffer / 8 bytes) + 1 (to go past the 2nd canary) + 1 (to go past the old %rbp)]$p which is %47$p. To ensure that this is the address, we can look at the canary value at %45$p. Canary values are very distinct from stack values, as they end in 00 and look different than other values on the stack. %46$p prints the old %rbp, which is something we will come back to, and %47$p prints the ret addr to main. 
 
 GDBing vuln, we see that that address of that without the randomised offset is 0x12ad. So then the adderss when running the actual %47$p is given by this equation: Output of %47$p = [randomised offset] + 0x12ad. So now in order to get the randomised offset, you just subtract 0x12ad from that address. Now with the knowledge of the base address offset, we are able to know EXACTLY where every single procedure in this program are. PIE defeated!
 
-## To be continued maybe
+### Example
+In this case we want to jump to win() so in gdb, win's address is 0x11c9, so the actual address of win on runtime is %47$p - 0x12ad + 0x11c9.
 
+## Summary so far!
+Okay that was a lot of information! What we have so far is literally only the address of win, so at least we know what to write instead of the return address, but the next question is **how** do we write and **where** do we write to exactly?
+The where part seems simple on paper again, it's just the location of the return address to main from vuln. But we don't know the exact address of that. This is where stack leaking comes into play again.
 
+## Leaking stack address
+Okay so looking at the stack again, we can leak old %rbp's value in vuln's stack frame, which is the address to the old %rbp in main.
+The payload to get this is %46$p. Using this address, we can look at the stack and subtract 24 bytes to get the address of WHERE to write to, which is the ret addr to main from vuln.
+
+Great! So this leaves one more problem. How can we **write** to that location? I'm tired and I need sleep so maybe ill continue this another time but probably only if people want this info. It has to do with the %ln format specifier...
