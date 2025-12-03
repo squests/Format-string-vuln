@@ -12,7 +12,7 @@ Canaries are a mechanism specifically designed to prevent stack smashing and ove
 NX is quite simply that bytes on the stack aren't able to be executed, so no shellcode can be injected. Format-String-Vuln is able to bypass this but requires a lot of tedious work to write shellcode with this methodology.
 
 # What is Format String Vuln?
-Format String Vuln to put simply is the act of trying to access parameters that aren't there through format specifiers (%s, %n, %p, %x, etc). What's special about these is that if there is code where you are able to input something in printf and it points to the start of your buffer input, then you are able to inject these format specifiers.
+Format String Vuln to put simply is the act of trying to access parameters using printf that aren't there through format specifiers (%s, %n, %p, %x, etc). What's special about these is that if there is code where you are able to input something in printf and it points to the start of your buffer input, then you are able to inject these format specifiers.
 char buffer[300];
 fgets(buffer, sizeof(buffer), stdin)
 printf(buffer);
@@ -80,4 +80,4 @@ The where part seems simple on paper again, it's just the location of the return
 Okay so looking at the stack again, we can leak old %rbp's value in vuln's stack frame, which is the address to the old %rbp in main.
 The payload to get this is %46$p. Using this address, we can look at the stack and subtract 24 bytes to get the address of WHERE to write to, which is the ret addr to main from vuln.
 
-Great! So this leaves one more problem. How can we **write** to that location? I'm tired and I need sleep so maybe ill continue this another time but probably only if people want this info. It has to do with the %ln format specifier...
+Great! So this leaves one more problem. How can we **write** to that location? Maybe ill continue this another time but probably only if people want this info. It has to do with the %ln format specifier...
